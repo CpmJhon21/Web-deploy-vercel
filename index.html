@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vercel Deployer Pro // Jhon Production</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 600px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        
+        .badge {
+            display: inline-block;
+            background: linear-gradient(45deg, #7928CA, #FF0080);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+        }
+        
+        h1 {
+            font-size: 42px;
+            font-weight: 700;
+            background: linear-gradient(45deg, #7928CA, #FF0080);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .creator {
+            color: #888;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            margin-bottom: 30px;
+            display: block;
+        }
+        
+        .input-group {
+            margin-bottom: 25px;
+        }
+        
+        label {
+            display: block;
+            color: #aaa;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            color: white;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        input[type="text"]:focus, input[type="file"]:focus {
+            outline: none;
+            border-color: #7928CA;
+            background: rgba(255, 255, 255, 0.12);
+        }
+        
+        input[type="text"]::placeholder {
+            color: #666;
+        }
+        
+        .file-hint {
+            color: #666;
+            font-size: 12px;
+            margin-top: 8px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        #deployBtn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(45deg, #7928CA, #FF0080);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+        
+        #deployBtn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(121, 40, 202, 0.3);
+        }
+        
+        #deployBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        #terminal {
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 25px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .terminal-header {
+            background: #1a1a1a;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+        
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .terminal-dot.red { background: #FF5F56; }
+        .terminal-dot.yellow { background: #FFBD2E; }
+        .terminal-dot.green { background: #27CA40; }
+        
+        .terminal-title {
+            color: #888;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        
+        .terminal-content {
+            padding: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .terminal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .terminal-content::-webkit-scrollbar-track {
+            background: #1a1a1a;
+        }
+        
+        .terminal-content::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+        
+        .link {
+            color: #7928CA;
+            text-decoration: none;
+        }
+        
+        .link:hover {
+            text-decoration: underline;
+        }
+        
+        .instructions {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .instructions summary {
+            font-weight: 600;
+            color: #aaa;
+            cursor: pointer;
+            list-style: none;
+            margin-bottom: 10px;
+        }
+        
+        .instructions summary::after {
+            content: '▶';
+            float: right;
+            transform: rotate(90deg);
+            transition: transform 0.3s;
+        }
+        
+        .instructions[open] summary::after {
+            transform: rotate(-90deg);
+        }
+        
+        .instructions ul {
+            padding-left: 20px;
+            color: #888;
+            line-height: 1.8;
+        }
+        
+        .instructions li {
+            margin-bottom: 10px;
+        }
+        
+        .instructions code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #FF0080;
+        }
+        
+        .footer-info {
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .success { color: #27CA40; }
+        .error { color: #FF5F56; }
+        .normal { color: #fff; }
+        
+        @media (max-width: 640px) {
+            .container {
+                padding: 25px;
+            }
+            
+            h1 {
+                font-size: 32px;
+            }
+            
+            .terminal-content {
+                max-height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="badge">VERSI 3.5</div>
+        <h1>Deployer Pro</h1>
+        <span class="creator">DEV Jhon Production</span>
+        
+        <div class="input-group">
+            <label for="projectName">Project Name</label>
+            <input type="text" id="projectName" placeholder="my-project" value="test-Jhon Production" />
+        </div>
+        
+        <div class="input-group">
+            <label for="fileInput">Project Files</label>
+            <input type="file" id="fileInput" multiple="" />
+            <div class="file-hint">Upload semua file website Anda (pastikan ada index.html)</div>
+        </div>
+        
+        <button id="deployBtn">START DEPLOYMENT</button>
+        
+        <div id="terminal">
+            <div class="terminal-header">
+                <div class="terminal-dot red"></div>
+                <div class="terminal-dot yellow"></div>
+                <div class="terminal-dot green"></div>
+                <span class="terminal-title">Terminal</span>
+            </div>
+            <div class="terminal-content" id="status">
+                <span style="color: #666;">$</span> System ready...<br>
+                <span style="color: #666;">$</span> Select files and click deploy...
+            </div>
+        </div>
+        
+        <details class="instructions">
+            <summary>Documentation & Help</summary>
+            <ul>
+                <li><strong>Project ID:</strong> Gunakan huruf kecil & tanda hubung (e.g., <code>portfolio-v1</code>).</li>
+                <li><strong>Source:</strong> Upload folder root project website Anda.</li>
+                <li><strong>Core File:</strong> Pastikan terdapat <code>index.html</code>.</li>
+                <li><strong>Process:</strong> Klik tombol dan pantau terminal log di atas.</li>
+            </ul>
+        </details>
+        
+        <div class="footer-info">
+            <p>Deployment menggunakan Vercel API • Static Site Hosting</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const projectNameInput = document.getElementById('projectName');
+            const fileInput = document.getElementById('fileInput');
+            const deployBtn = document.getElementById('deployBtn');
+            const statusDiv = document.getElementById('status');
+            const fileHint = document.querySelector('.file-hint');
+            
+            // Update file hint
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    fileHint.textContent = `${this.files.length} file(s) selected`;
+                } else {
+                    fileHint.textContent = 'Upload semua file website Anda (pastikan ada index.html)';
+                }
+            });
+            
+            // Drag and drop functionality
+            const fileGroup = fileInput.parentElement;
+            
+            fileGroup.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                fileGroup.style.backgroundColor = 'rgba(121, 40, 202, 0.1)';
+            });
+            
+            fileGroup.addEventListener('dragleave', () => {
+                fileGroup.style.backgroundColor = '';
+            });
+            
+            fileGroup.addEventListener('drop', (e) => {
+                e.preventDefault();
+                fileGroup.style.backgroundColor = '';
+                fileInput.files = e.dataTransfer.files;
+                
+                if (fileInput.files.length > 0) {
+                    fileHint.textContent = `${fileInput.files.length} file(s) selected`;
+                }
+            });
+            
+            // Deploy button click handler
+            deployBtn.addEventListener('click', async function() {
+                await startDeployment();
+            });
+            
+            // Log function
+            function log(message, type = 'normal') {
+                const time = new Date().toLocaleTimeString('en-US', { hour12: false });
+                const prefix = `<span style="color:#666">[${time}]</span>`;
+                
+                statusDiv.innerHTML += `<br>${prefix} ${message}`;
+                
+                // Scroll to bottom
+                statusDiv.scrollTop = statusDiv.scrollHeight;
+                
+                // Add color class
+                const lastLine = statusDiv.lastElementChild;
+                if (lastLine) {
+                    lastLine.className = type;
+                }
+            }
+            
+            // Main deployment function
+            async function startDeployment() {
+                const projectName = projectNameInput.value.trim();
+                
+                // Validation
+                if (!projectName) {
+                    log('ERROR: Please enter project name', 'error');
+                    return;
+                }
+                
+                if (fileInput.files.length === 0) {
+                    log('ERROR: Please select files', 'error');
+                    return;
+                }
+                
+                // Disable button and show processing
+                deployBtn.disabled = true;
+                deployBtn.innerText = "PROCESSING...";
+                
+                // Clear terminal and show initial message
+                statusDiv.innerHTML = `<span style="color:#666">$</span> Starting deployment process...`;
+                
+                log("Validating inputs...");
+                
+                try {
+                    // Read files
+                    const files = [];
+                    log(`Reading ${fileInput.files.length} files...`);
+                    
+                    for (let file of fileInput.files) {
+                        if (file.name.startsWith('.')) continue;
+                        
+                        const content = await readFileAsText(file);
+                        files.push({
+                            name: file.name,
+                            content: content,
+                            type: file.type
+                        });
+                    }
+                    
+                    // Check for index.html
+                    const hasIndexHtml = files.some(f => f.name === 'index.html');
+                    if (!hasIndexHtml) {
+                        log("ERROR: index.html is required", 'error');
+                        deployBtn.innerText = "START DEPLOYMENT";
+                        deployBtn.disabled = false;
+                        return;
+                    }
+                    
+                    // Prepare payload
+                    const payload = {
+                        projectName: projectName,
+                        files: files
+                    };
+                    
+                    log("Uploading to server...");
+                    deployBtn.innerText = "☁ UPLOADING...";
+                    
+                    // Send to backend
+                    const response = await fetch('/api/deploy', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (response.ok && result.success) {
+                        log("✓ Deployment successful!", 'success');
+                        log(`🌐 URL: <a href="${result.url}" target="_blank" class="link">${result.url}</a>`, 'success');
+                        log(`Project: ${result.projectName}`, 'success');
+                        
+                        deployBtn.innerText = "✓ DEPLOY COMPLETE";
+                        
+                        // Open website after 2 seconds
+                        setTimeout(() => {
+                            window.open(result.url, '_blank');
+                        }, 2000);
+                        
+                        // Reset button after 5 seconds
+                        setTimeout(() => {
+                            deployBtn.innerText = "NEW DEPLOYMENT";
+                            deployBtn.disabled = false;
+                        }, 5000);
+                        
+                    } else {
+                        log(`ERROR: ${result.error || 'Deployment failed'}`, 'error');
+                        deployBtn.innerText = "TRY AGAIN";
+                        deployBtn.disabled = false;
+                    }
+                    
+                } catch (error) {
+                    console.error('Deployment error:', error);
+                    log(`ERROR: ${error.message}`, 'error');
+                    deployBtn.innerText = "TRY AGAIN";
+                    deployBtn.disabled = false;
+                }
+            }
+            
+            // Helper function to read file as text
+            function readFileAsText(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => resolve(e.target.result);
+                    reader.onerror = (e) => reject(new Error('Failed to read file'));
+                    reader.readAsText(file);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
