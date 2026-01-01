@@ -289,6 +289,15 @@
         
         <button id="deployBtn">START DEPLOYMENT</button>
         
+        <div class="input-group">
+            <label for="deleteId">Delete Deployment (ID or URL)</label>
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <input type="text" id="deleteId" placeholder="dpl_... or https://..." style="flex: 1;" />
+                <button id="deleteBtn" style="width: auto; padding: 10px 20px; background: #FF5F56; border: none; border-radius: 10px; color: white; cursor: pointer; font-weight: 600;">DELETE</button>
+            </div>
+            <button id="deleteAllBtn" style="width: 100%; padding: 12px; background: #8B0000; border: 1px solid #FF5F56; border-radius: 10px; color: white; cursor: pointer; font-weight: 600; font-size: 13px; transition: all 0.3s;">DELETE ALL PROJECTS FROM VERCEL</button>
+        </div>
+        
         <div id="terminal">
             <div class="terminal-header">
                 <div class="terminal-dot red"></div>
@@ -299,6 +308,19 @@
             <div class="terminal-content" id="status">
                 <span style="color: #666;">$</span> System ready...<br>
                 <span style="color: #666;">$</span> Select files and click deploy...
+            </div>
+        </div>
+
+        <!-- Success Modal -->
+        <div id="successModal" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); justify-content: center; align-items: center;">
+            <div style="background: #1a1a1a; border: 1px solid #7928CA; border-radius: 20px; padding: 30px; width: 90%; max-width: 500px; box-shadow: 0 0 30px rgba(121, 40, 202, 0.4);">
+                <h2 style="color: #27CA40; margin-bottom: 20px; text-align: center;">✓ DEPLOYMENT SUCCESS</h2>
+                <div id="modalContent" style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #fff; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; margin-bottom: 20px; max-height: 300px; overflow-y: auto;">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="closeModal" style="flex: 1; padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 10px; color: white; cursor: pointer;">CLOSE</button>
+                    <button id="openLink" style="flex: 1; padding: 12px; background: linear-gradient(45deg, #7928CA, #FF0080); border: none; border-radius: 10px; color: white; cursor: pointer; font-weight: 600;">OPEN SITE</button>
+                </div>
             </div>
         </div>
         
@@ -322,7 +344,14 @@
             const projectNameInput = document.getElementById('projectName');
             const fileInput = document.getElementById('fileInput');
             const deployBtn = document.getElementById('deployBtn');
+            const deleteIdInput = document.getElementById('deleteId');
+            const deleteBtn = document.getElementById('deleteBtn');
+            const deleteAllBtn = document.getElementById('deleteAllBtn');
             const statusDiv = document.getElementById('status');
+            const successModal = document.getElementById('successModal');
+            const modalContent = document.getElementById('modalContent');
+            const closeModal = document.getElementById('closeModal');
+            const openLink = document.getElementById('openLink');
             const fileHint = document.querySelector('.file-hint');
             
             // Update file hint
@@ -361,6 +390,93 @@
                 await startDeployment();
             });
             
+            // Delete button click handler
+            deleteBtn.addEventListener('click', async function() {
+                const id = deleteIdInput.value.trim();
+                if (!id) {
+                    log('ERROR: Please enter deployment ID', 'error');
+                    return;
+                }
+                
+                if (!confirm('Are you sure you want to delete this deployment?')) return;
+                
+                deleteBtn.disabled = true;
+                deleteBtn.innerText = "DELETING...";
+                log(`Starting deletion for ${id}...`);
+                
+                try {
+                    const response = await fetch('/api/deploy', {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ identifier: id })
+                    });
+                    
+                    const text = await response.text();
+                    let result;
+                    try {
+                        result = JSON.parse(text);
+                    } catch (e) {
+                        console.error('Server response was not JSON:', text);
+                        throw new Error('Server returned an invalid response (likely an error page). Check logs.');
+                    }
+                    
+                    if (response.ok && result.success) {
+                        log(`✓ Deployment ${id} deleted successfully`, 'success');
+                        deleteIdInput.value = '';
+                    } else {
+                        log(`ERROR: ${result.error || 'Deletion failed'}`, 'error');
+                    }
+                } catch (error) {
+                    log(`ERROR: ${error.message}`, 'error');
+                } finally {
+                    deleteBtn.disabled = false;
+                    deleteBtn.innerText = "DELETE";
+                }
+            });
+
+            // Delete ALL button handler
+            deleteAllBtn.addEventListener('click', async function() {
+                if (!confirm('DANGER: This will delete ALL projects from your Vercel account. Are you absolutely sure?')) return;
+                if (!confirm('FINAL WARNING: This action cannot be undone. Confirm again?')) return;
+                
+                deleteAllBtn.disabled = true;
+                deleteAllBtn.innerText = "CLEANING ALL PROJECTS...";
+                log('!!! Starting total cleanup of all Vercel projects !!!', 'error');
+                
+                try {
+                    const response = await fetch('/api/deploy/all', {
+                        method: 'DELETE'
+                    });
+                    
+                    const text = await response.text();
+                    let result;
+                    try {
+                        result = JSON.parse(text);
+                    } catch (e) {
+                        throw new Error('Server returned invalid response');
+                    }
+                    
+                    if (response.ok && result.success) {
+                        log(`✓ ${result.message}`, 'success');
+                    } else {
+                        log(`ERROR: ${result.error || 'Cleanup failed'}`, 'error');
+                    }
+                } catch (error) {
+                    log(`ERROR: ${error.message}`, 'error');
+                } finally {
+                    deleteAllBtn.disabled = false;
+                    deleteAllBtn.innerText = "DELETE ALL PROJECTS FROM VERCEL";
+                }
+            });
+            
+            // Modal close
+            closeModal.onclick = () => successModal.style.display = 'none';
+            window.onclick = (event) => {
+                if (event.target == successModal) successModal.style.display = 'none';
+            }
+            
             // Log function
             function log(message, type = 'normal') {
                 const time = new Date().toLocaleTimeString('en-US', { hour12: false });
@@ -380,7 +496,10 @@
             
             // Main deployment function
             async function startDeployment() {
-                const projectName = projectNameInput.value.trim();
+                let projectName = projectNameInput.value.trim().toLowerCase();
+                
+                // Sanitize project name to follow Vercel rules
+                projectName = projectName.replace(/[^a-z0-9._-]/g, '-').replace(/-{3,}/g, '--');
                 
                 // Validation
                 if (!projectName) {
@@ -450,7 +569,24 @@
                     if (response.ok && result.success) {
                         log("✓ Deployment successful!", 'success');
                         log(`🌐 URL: <a href="${result.url}" target="_blank" class="link">${result.url}</a>`, 'success');
-                        log(`Project: ${result.projectName}`, 'success');
+                        log(`Project ID: ${result.deploymentId}`, 'success');
+                        
+                        // Show Modal
+                        const fileList = files.map(f => `<li>${f.name}</li>`).join('');
+                        modalContent.innerHTML = `
+                            <p style="color: #7928CA; font-weight: bold; margin-bottom: 10px;">PROJECT INFO:</p>
+                            <div style="margin-bottom: 15px;">
+                                <strong>Name:</strong> ${result.projectName}<br>
+                                <strong>Project ID:</strong> <span style="color: #FFBD2E;">${result.projectId || 'N/A'}</span><br>
+                                <strong>Deployment ID:</strong> <span style="color: #888; font-size: 12px;">${result.deploymentId}</span><br>
+                                <strong>URL:</strong> <a href="${result.url}" target="_blank" style="color: #7928CA; word-break: break-all;">${result.url}</a>
+                            </div>
+                            <p style="color: #7928CA; font-weight: bold; margin-bottom: 5px;">FILES UPLOADED (${files.length}):</p>
+                            <ul style="padding-left: 20px; color: #888;">${fileList}</ul>
+                        `;
+                        successModal.style.display = 'flex';
+                        
+                        openLink.onclick = () => window.open(result.url, '_blank');
                         
                         deployBtn.innerText = "✓ DEPLOY COMPLETE";
                         
